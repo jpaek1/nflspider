@@ -1,0 +1,3 @@
+[scrapy]
+settings = nfl.settings
+
