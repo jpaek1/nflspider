@@ -1,0 +1,54 @@
+How to use scrapy spiders
+
+main directory: nba/nba/
+	- this is where you're gonna be running most of the command line functions
+
+spider directory: nba/nba/spider/nba_spider.py
+	- this is where you will be modifying the scraping code
+
+items directory: nba/nba/items.py
+	- this file holds the abstract object that are used, namely NBATeam and Player. In the
+		nba_spider.py file, you can see how to create these objects and assign the values. The
+		items.py file should have all of the fields in the stats table, so you shouldn't have
+		to touch this file. Just thought you'd wanna know what this is haha
+
+scrapy deploy configuration: nba/scrapy.cfg
+	- this is where you'll modify the [deploy] section to deploy the spider to your own scrapinghub.com
+		account. On scrapinghub, they give you this entire block of code to copy and paste in.
+
+command line functions:
+	- to run the spider without deploying (for testing purposes): scrapy crawl nbaspider
+	- to deploy the spider: shub deploy (you're gonna need to make your own scrapinghub.com account and 
+		connect your version of the spider with your account. they have some good tutorials on how to 
+		deploy it. only do this when you've tested your spider works how you want it)
+
+Now actually modifying the code, you should only have to worry about the code inside the "def parse(self, response)" 
+function. And even then, I've left the code to parse the entire table there, just commented out, so if you want
+different stats, then you just need to uncomment out those lines. If you do end up uncommenting out some of the lines 
+within the def parse() function, if you want to store the leaders of that category like we did for OOSE, just
+copy and paste one of the sort functions that are below and replace the stat category with the one you just added. You'll
+also have to go into the items.py file and add in the newly added stat_leaders field into the NBATeam object.
+
+When it comes to accessing the api, you have to do two http requests cuz it's a little hacky but it works. After
+you deploy the spider and run the spider job on scrapinghub, the way you actually access the info through
+the http endpoint is this:
+
+	http request for this url: "https://storage.scrapinghub.com/jobq/YOURPROJECTNUMBER/list?apikey=YOURAPIKEY&format=JSON"
+		- YOURPROJECTNUMBER is a 5 digit number that is assigned to your scrapinghub project that you've deployed your
+			spider to.
+		- YOURAPIKEY is a key that scrapinghub provides your account with. It should be in the account settings somewhere.
+		- This http request returns the list of jobs that your spider has completed, not the actual data, with the most 
+			recent one at the top. In our Parse code, in order to parse the http response, we used 
+			"var key_result = JSON.parse(httpResponse.text)", but I'm not sure how you're gonna be doing it. 
+		- In order to get the actual data you need to extract the "key" element from the first object in the first http
+			response. the key should be in the form of something like "YOURPROJECTNUMBER/X/Y", where X is the number of the
+			given by scrapinghub (it should be 1 in this case, because you will only have one spider) and Y is the number
+			of the most recent job (this number counts up from 1 to infinity). Save this key element in a string variable.
+
+	Once you get the key element out of the first response, then you can use an http request on this url:
+		"'http://storage.scrapinghub.com/items/' + key + '?apikey=YOURAPIKEY&format=JSON'"
+		- Store the response the same way, and once you parse the JSON object, you will have all of the data
+			from the API. Look at our Parse Cloud Code if you need any hints on how to go through the objects (that's on the
+			backend branch in SporTriviaCloud/cloud/main.js)
+
+
